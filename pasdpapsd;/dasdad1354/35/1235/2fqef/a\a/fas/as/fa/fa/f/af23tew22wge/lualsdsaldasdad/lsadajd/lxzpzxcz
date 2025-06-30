@@ -270,11 +270,14 @@ local function moveCircleSmoothly(targetPosition)
     tween:Play()
 end
 
+local reachTransparency = 0.8 
+
 local function createReachCircle()
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
     if reachCircle then
         reachCircle.Size = Vector3.new(reach * 2, reach * 2, reach * 2)
         reachCircle.Color = reachColor
+        reachCircle.Transparency = reachTransparency 
     else
         reachCircle = Instance.new("Part")
         reachCircle.Parent = Workspace
@@ -282,7 +285,7 @@ local function createReachCircle()
         reachCircle.Size = Vector3.new(reach * 2, reach * 2, reach * 2)
         reachCircle.Anchored = true
         reachCircle.CanCollide = false
-        reachCircle.Transparency = 0.8
+        reachCircle.Transparency = reachTransparency 
         reachCircle.Material = Enum.Material.ForceField
         reachCircle.Color = reachColor
         reachCircle.Position = player.Character.HumanoidRootPart.Position
@@ -295,7 +298,6 @@ local function createReachCircle()
         end)
     end
 end
-
 
 
 
@@ -483,7 +485,29 @@ Tabs.Main:AddInput("ReachInput", {
     })
 
 
-
+Tabs.Customization:AddInput("ReachTransparencyInput", {
+    Title = "Reach Circle Transparency",
+    Description = "Change the transparency of the reach circle (0-1)",
+    Default = "0.8",
+    Placeholder = "0.8",
+    Numeric = true,
+    Finished = true,
+    Callback = function(value)
+        local transparency = tonumber(value) or 0.8
+        transparency = math.clamp(transparency, 0, 1)
+        
+        reachTransparency = transparency
+        if reachCircle then
+            reachCircle.Transparency = transparency
+        end
+        
+        Fluent:Notify({
+            Title = "Reach Circle Transparency",
+            Content = "Transparency set to " .. transparency,
+            Duration = 3
+        })
+    end
+})
     Tabs.Customization:AddColorpicker("ReachColorPicker", {
         Title = "Reach Circle Color",
         Description = "Change the reach circle color",
