@@ -20,9 +20,6 @@ local success = pcall(function()
 end)
 if not success then
 	supported = false
-	error("Error: Exec not supported")
-else
-	print("Functions are supported")
 end
 
 
