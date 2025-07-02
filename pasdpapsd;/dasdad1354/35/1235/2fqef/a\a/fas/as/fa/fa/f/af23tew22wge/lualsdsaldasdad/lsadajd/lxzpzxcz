@@ -73,11 +73,6 @@ if hookmetamethod then
     
     setreadonly(mt, true)
 end
-local fim = tick()
-local tempoDecorrido = fim - inicio
-print("Bypassed in " .. tempoDecorrido .. " seconds")
-print("Sucessfull bypassed the anti-cheat")
-print("Please wait when script loads.")
 task.wait(1)
 pcall(function()
     BallNetworking:FireServer("Modify_Remotes")
