@@ -7,7 +7,7 @@ local BallNetworking = RemoteHandler.BallNetworking()
 local kick = remoteList[6]
 
 
--- add your prints here using cprint, i will probably add some here for you to use idk
+
 
 local supported = true
 local success = pcall(function()
@@ -20,9 +20,9 @@ local success = pcall(function()
 end)
 if not success then
 	supported = false
-	error("Error: Exec not supported")
+
 else
-	print("Functions are supported")
+	supported = true
 end
 
 
@@ -73,11 +73,6 @@ if hookmetamethod then
     
     setreadonly(mt, true)
 end
-local fim = tick()
-local tempoDecorrido = fim - inicio
-print("Bypassed in " .. tempoDecorrido .. " seconds")
-print("Sucessfull bypassed the anti-cheat")
-print("Please wait when script loads.")
 task.wait(1)
 pcall(function()
     BallNetworking:FireServer("Modify_Remotes")
