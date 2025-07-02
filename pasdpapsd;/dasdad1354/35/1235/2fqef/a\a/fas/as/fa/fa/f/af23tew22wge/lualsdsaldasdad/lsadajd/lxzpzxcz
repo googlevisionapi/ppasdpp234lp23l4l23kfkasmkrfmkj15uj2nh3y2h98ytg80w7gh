@@ -7,7 +7,7 @@ local BallNetworking = RemoteHandler.BallNetworking()
 local kick = remoteList[6]
 
 
--- add your prints here using cprint, i will probably add some here for you to use idk
+
 
 local supported = true
 local success = pcall(function()
@@ -250,6 +250,75 @@ local function getCurrentBalls()
     return currentBalls
 end
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+
+local autoCatchEnabled = false
+local catchDistance = 8
+local lastCatchTime = 0
+local catchCooldown = 0.5
+
+
+local function checkBallDistance()
+	if not autoCatchEnabled or not character or not character.Parent then return end
+	
+	local ball = getgenv().BALLTPS
+	if not ball then return end
+	
+
+	local ballOwner = ball:FindFirstChild("NetworkOwner")
+	if ballOwner and ballOwner.Value == player.Name then
+		return
+	end
+	
+	local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+	if not humanoidRootPart then return end
+	
+	local currentTime = tick()
+	if currentTime - lastCatchTime < catchCooldown then return end
+	
+	local ballPosition = ball.Position
+	local playerPosition = humanoidRootPart.Position
+	local distance = (ballPosition - playerPosition).Magnitude
+	
+
+	if distance <= catchDistance then
+		local ballY = ballPosition.Y
+		local playerY = playerPosition.Y
+		
+		if math.abs(ballY - (playerY - 2)) <= 3 then
+			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
+			task.wait(0.1)
+			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
+			lastCatchTime = currentTime
+		end
+	end
+end
+
+
+Players.LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+	character = newCharacter
+end)
+
+
+
+
+local function enableAutoCatch()
+	autoCatchEnabled = true
+end
+
+local function disableAutoCatch()
+	autoCatchEnabled = false
+end
+
+local function setCatchDistance(distance)
+	catchDistance = distance
+end
 local function getBallInstance()
     local ballsFolder = workspace:FindFirstChild("Balls")
     if ballsFolder then
@@ -432,9 +501,31 @@ Tabs.Main:AddInput("ReachInput", {
     end
 })
 
+Tabs.Main:AddInput("AutoCatchDistance", {
+    Title = "Auto-Catch distance",
+    Description = "Set the auto-catch distance (default: 2)",
+    Default = "2",
+    Placeholder = "2",
+    Numeric = true,
+    Finished = true,
+    Callback = function(value)
+        value1 = tonumber(value) 
+        setCatchDistance(value1)
+    end
+})
 
-
-
+    Tabs.Main:AddToggle("autocatch", {
+        Title = "Enable auto-catch",
+        Description = "enables auto-catch (use dribble)",
+        Default = false,
+        Callback = function(state)
+            if state then
+                enableAutoCatch()
+            else
+                disableAutoCatch()
+            end
+        end
+})
     Tabs.esp:AddToggle("EspToggle", {
         Title = "Enable ESP",
         Description = "Show ball ESP",
@@ -867,43 +958,71 @@ local index = 1
 
 
 
-local function onQuantumInputBegan(input, gameProcessedEvent)
-    local ignoredKeys = {
-        [Enum.KeyCode.W] = true,
-        [Enum.KeyCode.A] = true,
-        [Enum.KeyCode.S] = true,
-        [Enum.KeyCode.D] = true,
-        [Enum.KeyCode.Space] = true,
-        [Enum.KeyCode.Slash] = true,
-        [Enum.KeyCode.Semicolon] = true
-    }
 
-    if input.UserInputType == Enum.UserInputType.Keyboard and
-       (input.KeyCode == Enum.KeyCode.Slash or input.KeyCode == Enum.KeyCode.Semicolon) then
-        return
+
+local currentMode = "LEGS MODE"
+local modeConnections = {}
+
+
+local ModeDropdown = Tabs.Main:AddDropdown("ModeDropdown", {
+    Title = "Touch Mode",
+    Description = "Select which body parts to use for ball interaction",
+    Values = {"LEGS MODE", "ARMS MODE"},
+    Multi = false,
+    Default = 1,
+})
+
+
+local function disconnectModeConnections()
+    for _, connection in pairs(modeConnections) do
+        if connection then
+            connection:Disconnect()
+        end
     end
+    modeConnections = {}
+end
 
-    if ignoredKeys[input.KeyCode] then return end
 
-    if not gameProcessedEvent then
-        for _, legName in pairs({"Right Leg", "Left Leg"}) do
-            local leg = player.Character and player.Character:FindFirstChild(legName)
-            if leg then
-                for _, v in pairs(leg:GetDescendants()) do
-                    if v.Name == "TouchInterest" and v.Parent then
-                        -- Get current balls dynamically
-                        local currentBalls = getCurrentBalls()
-                        for _, e in pairs(currentBalls) do
-                            if e and e.Parent and e.Position and leg.Position and (e.Position - leg.Position).magnitude < reach then
-                                if ballOwnerEnabled or (not ballOwners[e] or ballOwners[e] == player) then
-                                    if not ballOwners[e] then
-                                        ballOwners[e] = player
+local function setupLegsMode()
+    disconnectModeConnections()
+    
+    local function onQuantumInputBeganLegs(input, gameProcessedEvent)
+        local ignoredKeys = {
+            [Enum.KeyCode.W] = true,
+            [Enum.KeyCode.A] = true,
+            [Enum.KeyCode.S] = true,
+            [Enum.KeyCode.D] = true,
+            [Enum.KeyCode.Space] = true,
+            [Enum.KeyCode.Slash] = true,
+            [Enum.KeyCode.Semicolon] = true
+        }
+
+        if input.UserInputType == Enum.UserInputType.Keyboard and
+           (input.KeyCode == Enum.KeyCode.Slash or input.KeyCode == Enum.KeyCode.Semicolon) then
+            return
+        end
+
+        if ignoredKeys[input.KeyCode] then return end
+
+        if not gameProcessedEvent then
+            for _, legName in pairs({"Right Leg", "Left Leg"}) do
+                local leg = player.Character and player.Character:FindFirstChild(legName)
+                if leg then
+                    for _, v in pairs(leg:GetDescendants()) do
+                        if v.Name == "TouchInterest" and v.Parent then
+                            local currentBalls = getCurrentBalls()
+                            for _, e in pairs(currentBalls) do
+                                if e and e.Parent and e.Position and leg.Position and (e.Position - leg.Position).magnitude < reach then
+                                    if ballOwnerEnabled or (not ballOwners[e] or ballOwners[e] == player) then
+                                        if not ballOwners[e] then
+                                            ballOwners[e] = player
+                                        end
+                                        pcall(function()
+                                            firetouchinterest(e, v.Parent, 0)
+                                            firetouchinterest(e, v.Parent, 1)
+                                        end)
+                                        break
                                     end
-                                    pcall(function()
-                                        firetouchinterest(e, v.Parent, 0)
-                                        firetouchinterest(e, v.Parent, 1)
-                                    end)
-                                    break
                                 end
                             end
                         end
@@ -912,31 +1031,29 @@ local function onQuantumInputBegan(input, gameProcessedEvent)
             end
         end
     end
-end
 
-UserInputService.InputBegan:Connect(onQuantumInputBegan)
 
-RunService.RenderStepped:Connect(function()
-    for _, legName in pairs({"Right Leg", "Left Leg"}) do
-        local leg = player.Character and player.Character:FindFirstChild(legName)
-        if leg then
-            for _, v in pairs(leg:GetDescendants()) do
-                if v.Name == "TouchInterest" and v.Parent then
-                    -- Get current balls dynamically
-                    local currentBalls = getCurrentBalls()
-                    for _, e in pairs(currentBalls) do
-                        if e and e.Parent and e.Position and leg.Position and (e.Position - leg.Position).magnitude < reach then
-                            if not ballOwners[e] then
-                                ballOwners[e] = player
-                                pcall(function()
-                                    firetouchinterest(e, v.Parent, 0)
-                                    firetouchinterest(e, v.Parent, 1)
-                                end)
-                            elseif ballOwners[e] == player then
-                                pcall(function()
-                                    firetouchinterest(e, v.Parent, 0)
-                                    firetouchinterest(e, v.Parent, 1)
-                                end)
+    local function onRenderSteppedLegs()
+        for _, legName in pairs({"Right Leg", "Left Leg"}) do
+            local leg = player.Character and player.Character:FindFirstChild(legName)
+            if leg then
+                for _, v in pairs(leg:GetDescendants()) do
+                    if v.Name == "TouchInterest" and v.Parent then
+                        local currentBalls = getCurrentBalls()
+                        for _, e in pairs(currentBalls) do
+                            if e and e.Parent and e.Position and leg.Position and (e.Position - leg.Position).magnitude < reach then
+                                if not ballOwners[e] then
+                                    ballOwners[e] = player
+                                    pcall(function()
+                                        firetouchinterest(e, v.Parent, 0)
+                                        firetouchinterest(e, v.Parent, 1)
+                                    end)
+                                elseif ballOwners[e] == player then
+                                    pcall(function()
+                                        firetouchinterest(e, v.Parent, 0)
+                                        firetouchinterest(e, v.Parent, 1)
+                                    end)
+                                end
                             end
                         end
                     end
@@ -944,7 +1061,123 @@ RunService.RenderStepped:Connect(function()
             end
         end
     end
+    
+
+    modeConnections[#modeConnections + 1] = UserInputService.InputBegan:Connect(onQuantumInputBeganLegs)
+    modeConnections[#modeConnections + 1] = RunService.RenderStepped:Connect(onRenderSteppedLegs)
+    
+    Fluent:Notify({
+        Title = "Mode Changed",
+        Content = "LEGS MODE activated",
+        Duration = 3
+    })
+end
+
+
+local function setupArmsMode()
+    disconnectModeConnections()
+    
+
+    local function onQuantumInputBeganArms(input, gameProcessedEvent)
+        local ignoredKeys = {
+            [Enum.KeyCode.W] = true,
+            [Enum.KeyCode.A] = true,
+            [Enum.KeyCode.S] = true,
+            [Enum.KeyCode.D] = true,
+            [Enum.KeyCode.Space] = true,
+            [Enum.KeyCode.Slash] = true,
+            [Enum.KeyCode.Semicolon] = true
+        }
+
+        if input.UserInputType == Enum.UserInputType.Keyboard and
+           (input.KeyCode == Enum.KeyCode.Slash or input.KeyCode == Enum.KeyCode.Semicolon) then
+            return
+        end
+
+        if ignoredKeys[input.KeyCode] then return end
+
+        if not gameProcessedEvent then
+            for _, armName in pairs({"Right Arm", "Left Arm"}) do
+                local arm = player.Character and player.Character:FindFirstChild(armName)
+                if arm then
+                    for _, v in pairs(arm:GetDescendants()) do
+                        if v.Name == "TouchInterest" and v.Parent then
+                            local currentBalls = getCurrentBalls()
+                            for _, e in pairs(currentBalls) do
+                                if e and e.Parent and e.Position and arm.Position and (e.Position - arm.Position).magnitude < reach then
+                                    if ballOwnerEnabled or (not ballOwners[e] or ballOwners[e] == player) then
+                                        if not ballOwners[e] then
+                                            ballOwners[e] = player
+                                        end
+                                        pcall(function()
+                                            firetouchinterest(e, v.Parent, 0)
+                                            firetouchinterest(e, v.Parent, 1)
+                                        end)
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+
+    local function onRenderSteppedArms()
+        for _, armName in pairs({"Right Arm", "Left Arm"}) do
+            local arm = player.Character and player.Character:FindFirstChild(armName)
+            if arm then
+                for _, v in pairs(arm:GetDescendants()) do
+                    if v.Name == "TouchInterest" and v.Parent then
+                        local currentBalls = getCurrentBalls()
+                        for _, e in pairs(currentBalls) do
+                            if e and e.Parent and e.Position and arm.Position and (e.Position - arm.Position).magnitude < reach then
+                                if not ballOwners[e] then
+                                    ballOwners[e] = player
+                                    pcall(function()
+                                        firetouchinterest(e, v.Parent, 0)
+                                        firetouchinterest(e, v.Parent, 1)
+                                    end)
+                                elseif ballOwners[e] == player then
+                                    pcall(function()
+                                        firetouchinterest(e, v.Parent, 0)
+                                        firetouchinterest(e, v.Parent, 1)
+                                    end)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+
+    modeConnections[#modeConnections + 1] = UserInputService.InputBegan:Connect(onQuantumInputBeganArms)
+    modeConnections[#modeConnections + 1] = RunService.RenderStepped:Connect(onRenderSteppedArms)
+    
+    Fluent:Notify({
+        Title = "Mode Changed",
+        Content = "ARMS MODE activated",
+        Duration = 3
+    })
+end
+
+
+ModeDropdown:OnChanged(function(Value)
+    currentMode = Value
+    
+    if currentMode == "LEGS MODE" then
+        setupLegsMode()
+    elseif currentMode == "ARMS MODE" then
+        setupArmsMode()
+    end
 end)
+
+
+setupLegsMode()
 
 RunService.RenderStepped:Connect(function()
     if not espEnabled then return end
