@@ -7,7 +7,7 @@ local BallNetworking = RemoteHandler.BallNetworking()
 local kick = remoteList[6]
 
 
-
+-- add your prints here using cprint, i will probably add some here for you to use idk
 
 local supported = true
 local success = pcall(function()
@@ -20,7 +20,7 @@ local success = pcall(function()
 end)
 if not success then
 	supported = false
-
+	
 else
 	supported = true
 end
@@ -73,6 +73,11 @@ if hookmetamethod then
     
     setreadonly(mt, true)
 end
+local fim = tick()
+local tempoDecorrido = fim - inicio
+print("Bypassed in " .. tempoDecorrido .. " seconds")
+print("Sucessfull bypassed the anti-cheat")
+print("Please wait when script loads.")
 task.wait(1)
 pcall(function()
     BallNetworking:FireServer("Modify_Remotes")
@@ -252,48 +257,6 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 
-
-local autoCatchEnabled = false
-local catchDistance = 8
-local lastCatchTime = 0
-local catchCooldown = 0.5
-
-
-local function checkBallDistance()
-	if not autoCatchEnabled or not character or not character.Parent then return end
-	
-	local ball = getgenv().BALLTPS
-	if not ball then return end
-	
-
-	local ballOwner = ball:FindFirstChild("NetworkOwner")
-	if ballOwner and ballOwner.Value == player.Name then
-		return
-	end
-	
-	local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-	if not humanoidRootPart then return end
-	
-	local currentTime = tick()
-	if currentTime - lastCatchTime < catchCooldown then return end
-	
-	local ballPosition = ball.Position
-	local playerPosition = humanoidRootPart.Position
-	local distance = (ballPosition - playerPosition).Magnitude
-	
-
-	if distance <= catchDistance then
-		local ballY = ballPosition.Y
-		local playerY = playerPosition.Y
-		
-		if math.abs(ballY - (playerY - 2)) <= 3 then
-			VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
-			task.wait(0.1)
-			VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
-			lastCatchTime = currentTime
-		end
-	end
-end
 
 
 Players.LocalPlayer.CharacterAdded:Connect(function(newCharacter)
@@ -496,31 +459,7 @@ Tabs.Main:AddInput("ReachInput", {
     end
 })
 
-Tabs.Main:AddInput("AutoCatchDistance", {
-    Title = "Auto-Catch distance",
-    Description = "Set the auto-catch distance (default: 2)",
-    Default = "2",
-    Placeholder = "2",
-    Numeric = true,
-    Finished = true,
-    Callback = function(value)
-        value1 = tonumber(value) 
-        setCatchDistance(value1)
-    end
-})
 
-    Tabs.Main:AddToggle("autocatch", {
-        Title = "Enable auto-catch",
-        Description = "enables auto-catch (use dribble)",
-        Default = false,
-        Callback = function(state)
-            if state then
-                enableAutoCatch()
-            else
-                disableAutoCatch()
-            end
-        end
-})
     Tabs.esp:AddToggle("EspToggle", {
         Title = "Enable ESP",
         Description = "Show ball ESP",
@@ -1242,10 +1181,3 @@ while wait(0.1) do
 
 getgenv().BALLTPS = pu()
 end
-
-spawn(function()
-    while true do
-        checkBallDistance()
-        wait(0.1) 
-    end
-end)
