@@ -1,0 +1,302 @@
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+
+local Window = Fluent:CreateWindow({
+    Title = "SPJ Reach ",
+    SubTitle = "by alr_dev",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+
+local MainTab = Window:AddTab({ Title = "Main", Icon = "house" })
+local funtab = Window:AddTab({ Title = "Fun", Icon = "sticker" })
+local SettingsTab = Window:AddTab({ Title = "Settings", Icon = "settings" })
+local AutoFarmTab = Window:AddTab({ Title = "Auto-Farm", Icon = "play" })
+
+
+
+
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("StarterGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
+local Teams = game:GetService("Teams")
+local player = Players.LocalPlayer
+
+local balls, touchint = {}, {}
+local lastRefreshTime = os.time()
+local reach = 50
+local reachCircle
+
+local autoFarmEnabled2 = false
+local autoFarmEnabled = false
+
+local foldersToSearch = {
+    Workspace.WorkspaceStadiumSounds,
+    Workspace.WorkspaceStadiumFolder,
+    Workspace.WorkspaceCharacters,
+    Workspace.WorkspaceLeaderboards,
+    Workspace["Main Portal Template"]
+}
+
+local function findTPSBall()
+    for _, folder in ipairs(foldersToSearch) do
+        local ballCandidate = folder:FindFirstChild("TPS")
+        if ballCandidate then
+            return ballCandidate
+        end
+    end
+    return nil
+end
+
+local ball = findTPSBall()
+if not ball then
+    warn("TPS ball not found in the specified folders!")
+end
+local networkOwner = ball and ball:FindFirstChild("Owner")
+
+
+spawn(function()
+    while true do
+        if autoFarmEnabled2 then
+            local VirtualInputManager = game:GetService("VirtualInputManager")
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
+            wait(0.05)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
+        end
+        wait()
+    end
+end)
+
+local function teleportBallToGoal()
+    if not ball then return end
+    if player.Team == Teams["Away"] then
+        ball.CFrame = CFrame.new(-19.0787888, -24.802742, -197.551834)
+    elseif player.Team == Teams["Home"] then
+        ball.CFrame = CFrame.new(-20.0310287, -26.8024559, 382.160706)
+    end
+end
+
+local function teleportToBall()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and ball then
+        player.Character.HumanoidRootPart.CFrame = ball.CFrame * CFrame.new(0, 2, 0)
+    end
+end
+
+local function shootBall()
+    local shootTool = player.Backpack:FindFirstChild("Dribble")
+    if shootTool and player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid:EquipTool(shootTool)
+    end
+end
+
+local function startAutoFarm()
+    while autoFarmEnabled do
+        wait(0.1)
+        if not ball or not ball.Parent then
+            ball = findTPSBall()
+            if ball then
+                networkOwner = ball:FindFirstChild("Owner")
+            end
+        end
+
+        if ball and networkOwner then
+            if tostring(networkOwner.Value) == player.Name then
+                teleportBallToGoal()
+            else
+                teleportToBall()
+                shootBall()
+            end
+        end
+    end
+end
+
+
+
+
+
+
+
+local function refreshBalls(force)
+    if not force and lastRefreshTime + 1.5 > os.time() then return end
+    table.clear(touchint)
+    if player.Character then
+        for _, v in pairs(player.Character:GetDescendants()) do
+            if v.Name == "TouchInterest" and v.Parent:IsA("BasePart") then
+                table.insert(touchint, v)
+            end
+        end
+    end
+    lastRefreshTime = os.time()
+    table.clear(balls)
+    for _, v in pairs(Workspace:GetDescendants()) do
+        local firstLetter = string.sub(v.Name, 1, 1)
+        if v.Name == "TPS" or v.Name == "AIFA" or v.Name == "MRS" or v.Name == "PRS" or 
+           v.Name == "MPS" or v.Name == "VFA" or firstLetter == "{" then
+            task.wait()
+            table.insert(balls, v)
+        end
+    end
+end
+
+local function moveReachCircle(targetPosition)
+    if not reachCircle then return end
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+    local tweenGoal = {Position = targetPosition}
+    local tween = TweenService:Create(reachCircle, tweenInfo, tweenGoal)
+    tween:Play()
+end
+
+local function createReachCircle()
+    if not reachCircle then
+        reachCircle = Instance.new("Part")
+        reachCircle.Parent = Workspace
+        reachCircle.Shape = Enum.PartType.Ball
+        reachCircle.Size = Vector3.new(reach * 2, reach * 2, reach * 2)
+        reachCircle.Anchored = true
+        reachCircle.CanCollide = false
+        reachCircle.Transparency = 0.7
+        reachCircle.Material = Enum.Material.ForceField
+        reachCircle.Color = Color3.new(0, 0, 1)
+
+        RunService.RenderStepped:Connect(function()
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                moveReachCircle(player.Character.HumanoidRootPart.Position)
+            end
+        end)
+    else
+        reachCircle.Size = Vector3.new(reach * 2, reach * 2, reach * 2)
+    end
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    refreshBalls(false)
+    if player.Character and player.Character:FindFirstChild("Right Leg") then
+        for _, ball in pairs(balls) do
+            if (ball.Position - player.Character["Right Leg"].Position).magnitude <= reach then
+                task.wait()
+                for _, v in pairs(touchint) do
+                    if v.Parent ~= player.Character["Head"] then
+                      pcall(function()
+                     task.spawn(function()
+                        firetouchinterest(ball, v.Parent, 0)
+                        firetouchinterest(ball, v.Parent, 1)
+    end)
+end)
+
+                    end
+                end
+            end
+        end
+    end
+end)
+
+
+local ReachSlider = MainTab:AddSlider("ReachSlider", {
+    Title = "Adjust Reach",
+    Description = "Set the reach distance (current: " .. reach .. ")",
+    Default = reach,
+    Min = 0,
+    Max = 100,
+    Rounding = 1,
+    Callback = function(Value)
+         reach = tonumber(Value)
+         createReachCircle()
+         print("Reach set to", reach)
+    end
+})
+local range = 20
+local force = 5000
+
+funtab:AddButton({
+    Title = "Super Shoot",
+    Description = "",
+    Callback = function()
+
+        local char = player.Character or player.CharacterAdded:Wait()
+        local rootPart = char:WaitForChild("HumanoidRootPart")
+
+        local function getNearbyUnanchoredParts()
+            local parts = {}
+            for _, part in pairs(workspace:GetDescendants()) do
+                if part:IsA("BasePart") and not part.Anchored and not part:IsDescendantOf(char) then
+                    local dist = (part.Position - rootPart.Position).magnitude
+                    if dist <= range then
+                        table.insert(parts, part)
+                    end
+                end
+            end
+            return parts
+        end
+
+        local unanchoredParts = getNearbyUnanchoredParts()
+        for _, part in pairs(unanchoredParts) do
+            local direction = (part.Position - rootPart.Position)
+            direction = Vector3.new(direction.X, 0, direction.Z).unit
+
+            part:ApplyImpulse(direction * force)
+        end
+    end
+})
+
+local AutoFarmToggle = AutoFarmTab:AddToggle("AutoFarmToggle", {
+    Title = "Enable Auto-Farm",
+    Default = false
+})
+AutoFarmToggle:OnChanged(function(Value)
+    autoFarmEnabled = Value
+    if autoFarmEnabled then
+         startAutoFarm()
+    end
+
+end)
+
+local AutoHotkeyToggle = AutoFarmTab:AddToggle("AutoHotkeyToggle", {
+    Title = "Enable Auto-Hotkey",
+    Default = false
+})
+AutoHotkeyToggle:OnChanged(function(Value)
+    autoFarmEnabled2 = Value
+
+end)
+
+createReachCircle()
+
+
+InterfaceManager:SetLibrary(Fluent)
+SaveManager:SetLibrary(Fluent)
+
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+
+
+InterfaceManager:SetFolder("config")
+SaveManager:SetFolder("config/classicsoccer")
+
+
+InterfaceManager:BuildInterfaceSection(SettingsTab)
+SaveManager:BuildConfigSection(SettingsTab)
+
+
+Window:SelectTab(1)
+Fluent:Notify({
+    Title = "scrippt",
+    Content = "The script has been loaded.",
+    Duration = 8
+})
+
+
+SaveManager:LoadAutoloadConfig()
+
+pcall(closeDevConsole)
