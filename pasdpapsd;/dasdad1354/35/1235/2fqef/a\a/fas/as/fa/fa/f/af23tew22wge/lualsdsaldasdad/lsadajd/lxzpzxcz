@@ -162,7 +162,7 @@ Tabs.Status:AddParagraph({
 })
 Tabs.Status:AddParagraph({
     Title = "Script Version",
-    Content = "0.2.7"
+    Content = "0.2.8"
 })
 local MarketplaceService = game:GetService("MarketplaceService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
