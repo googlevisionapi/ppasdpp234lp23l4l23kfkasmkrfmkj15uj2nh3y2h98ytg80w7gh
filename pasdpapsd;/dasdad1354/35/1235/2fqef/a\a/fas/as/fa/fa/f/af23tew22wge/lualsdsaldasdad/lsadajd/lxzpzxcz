@@ -105,7 +105,21 @@ hookfunction(Replication.GetHorizontalCurve, function(_, leg, ball, power, _, re
     if reverse then result = -result end
     return result * curveMultiplier
 end)
+hookfunction(Replication2.GetHorizontalCurve, function(_, leg, ball, power, _, reverse)
+    local cf = leg.CFrame
+    local legSize = leg.Size.X
+    local ballRadius = ball.Size.X / 2
+    local localPos = cf:PointToObjectSpace(ball.Position)
+    local curveMultiplier = Values.CurveMultiplier.Value
 
+    local offsetX = localPos.X
+    local ratio = math.abs(offsetX) / ballRadius + legSize / 2
+    local easing = TweenService:GetValue(math.clamp(ratio, 0, 1), Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+    local result = easing * (offsetX < 0 and 1 or -1) * power
+
+    if reverse then result = -result end
+    return result * curveMultiplier
+end)
 local oldfunction = x.IsDistanceTooBig
 local oldfunction1 = v.IsDistanceTooBig
 local function1 = x.VerifyHit
