@@ -7,8 +7,6 @@ local BallNetworking = RemoteHandler.BallNetworking()
 local kick = remoteList[6]
 
 
--- add your prints here using cprint, i will probably add some here for you to use idk
-
 local supported = true
 local success = pcall(function()
 	getrawmetatable(game)
@@ -87,6 +85,26 @@ local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/d
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 local v = require(game:GetService("StarterPlayer").StarterPlayerScripts["TSFL Client"].Modules.BallNetworking)
 local x = require(game:GetService("Players").LocalPlayer.PlayerScripts["TSFL Client"].Modules.BallNetworking)
+local Replication = require(game:GetService("StarterPlayer").StarterPlayerScripts["TSFL Client"].Modules.Replication)
+local Replication2 = require(game:GetService("Players").LocalPlayer.PlayerScripts["TSFL Client"].Modules.Replication)
+local Values = game:GetService("ReplicatedStorage").Values
+local TweenService = game:GetService("TweenService")
+
+hookfunction(Replication.GetHorizontalCurve, function(_, leg, ball, power, _, reverse)
+    local cf = leg.CFrame
+    local legSize = leg.Size.X
+    local ballRadius = ball.Size.X / 2
+    local localPos = cf:PointToObjectSpace(ball.Position)
+    local curveMultiplier = Values.CurveMultiplier.Value
+
+    local offsetX = localPos.X
+    local ratio = math.abs(offsetX) / ballRadius + legSize / 2
+    local easing = TweenService:GetValue(math.clamp(ratio, 0, 1), Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+    local result = easing * (offsetX < 0 and 1 or -1) * power
+
+    if reverse then result = -result end
+    return result * curveMultiplier
+end)
 
 local oldfunction = x.IsDistanceTooBig
 local oldfunction1 = v.IsDistanceTooBig
@@ -564,30 +582,42 @@ Tabs.Customization:AddInput("ReachTransparencyInput", {
 end
 
 
-
-
-Tabs.Ball:AddSlider('ModifyCurve', {
-    Title = 'Modify Curve',
-    Description = 'Change the curve of the ball',
-    Default = 1,
-    Min = 0.5,
-    Max = 10,
-    Rounding = 2,
+Tabs.Ball:AddInput("ModifyCurve", {
+    Title = "Modify Curve",
+    Description = "Change the curve of the ball",
+    Default = "1",
+    Placeholder = "1",
+    Numeric = true,
+    Finished = true,
     Callback = function(value)
-        game:GetService("ReplicatedStorage").Values.CurveMultiplier.Value = value
+        game:GetService("ReplicatedStorage").Values.CurveMultiplier.Value = tonumber(value)
     end
 })
-Tabs.Ball:AddSlider('ModifyBackSpin', {
-    Title = 'Modify Back Spin',
-    Description = 'Change the back spin of the ball',
-    Default = 0,
-    Min = 0.5,
-    Max = 10,
-    Rounding = 2,
+
+Tabs.Ball:AddInput("ModifyBackSpin", {
+    Title = "Modify Back Spin",
+    Description = "Change the back spin of the ball",
+    Default = "0",
+    Placeholder = "0",
+    Numeric = true,
+    Finished = true,
     Callback = function(value)
-        game:GetService("ReplicatedStorage").Values.BackSpin.Value = value
+        game:GetService("ReplicatedStorage").Values.BackSpin.Value = tonumber(value)
     end
 })
+
+Tabs.Ball:AddInput("ModifyTopSpin", {
+    Title = "Modify Back Spin",
+    Description = "Change the back spin of the ball",
+    Default = "0",
+    Placeholder = "0",
+    Numeric = true,
+    Finished = true,
+    Callback = function(value)
+        game:GetService("ReplicatedStorage").Values.TopSpinValue = tonumber(value)
+    end
+})
+
 local autoFarmEnabled = false
 local autoKeyEnabled = false
 
