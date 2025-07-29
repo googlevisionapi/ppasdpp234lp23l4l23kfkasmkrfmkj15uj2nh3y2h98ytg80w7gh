@@ -1,0 +1,174 @@
+
+
+local v = require(game:GetService("StarterPlayer").StarterPlayerScripts["TSFL Client"].Modules.BallNetworking)
+local x = require(game:GetService("Players").LocalPlayer.PlayerScripts["TSFL Client"].Modules.BallNetworking)
+
+local oldfunction = x.IsDistanceTooBig
+local oldfunction1 = v.IsDistanceTooBig
+local function1 = x.VerifyHit
+local function2 = v.VerifyHit
+local another1 = x.IsBallBoundingHitbox
+local another2 = x.IsBallBoundingHitbox
+
+local function v1()
+    return false
+end
+local function v2()
+    return true
+end
+
+hookfunction(oldfunction, v1)
+hookfunction(oldfunction1, v1)
+hookfunction(function1, v1)
+hookfunction(function2, v1)
+hookfunction(another1, v2)
+hookfunction(another2, v2)
+
+
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "SPJ Reach",
+    SubTitle = "idk",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(400, 300),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "box" })
+}
+
+
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+
+local reach = 10
+local player = Player
+
+
+local function isUUID(str)
+    return string.match(str, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") ~= nil
+end
+
+
+local function pu()
+    local ballsFolder = workspace.Balls
+    
+    for _, part in pairs(ballsFolder:GetDescendants()) do
+        if part:IsA("BasePart") and isUUID(part.Name) then
+            return part 
+        end
+    end
+    
+    return nil 
+end
+
+
+getgenv().TPSBALL = pu()
+
+
+local function getCurrentBalls()
+    local currentBalls = {}
+    local ballsFolder = workspace:FindFirstChild("Balls")
+    if ballsFolder then
+        for _, descendant in pairs(ballsFolder:GetDescendants()) do
+            if descendant:IsA("BasePart") and isUUID(descendant.Name) then
+                table.insert(currentBalls, descendant)
+            end
+        end
+    end
+    return currentBalls
+end
+
+
+Tabs.Main:AddInput("ReachInput", {
+    Title = "Reach Distance",
+    Description = "Set the reach distance (default: 10)",
+    Default = "10",
+    Placeholder = "10",
+    Numeric = true,
+    Finished = true,
+    Callback = function(value)
+        reach = tonumber(value) or 10
+        print("Reach set to: " .. reach)
+    end
+})
+
+
+local function onQuantumInputBegan(input, gameProcessedEvent)
+    local ignoredKeys = {
+        [Enum.KeyCode.W] = true,
+        [Enum.KeyCode.A] = true,
+        [Enum.KeyCode.S] = true,
+        [Enum.KeyCode.D] = true,
+        [Enum.KeyCode.Space] = true,
+        [Enum.KeyCode.Slash] = true,
+        [Enum.KeyCode.Semicolon] = true
+    }
+
+    if input.UserInputType == Enum.UserInputType.Keyboard and
+       (input.KeyCode == Enum.KeyCode.Slash or input.KeyCode == Enum.KeyCode.Semicolon) then
+        return
+    end
+
+    if ignoredKeys[input.KeyCode] then return end
+
+    if not gameProcessedEvent then
+        for _, legName in pairs({"Right Leg"}) do
+            local leg = player.Character and player.Character:FindFirstChild(legName)
+            if leg then
+                for _, v in pairs(leg:GetDescendants()) do
+                    if v.Name == "TouchInterest" and v.Parent then
+                        local currentBalls = getCurrentBalls()
+                        for _, e in pairs(currentBalls) do
+                            if e and e.Parent and e.Position and leg.Position and (e.Position - leg.Position).magnitude < reach then
+                                pcall(function()
+                                    firetouchinterest(e, v.Parent, 0)
+                                    firetouchinterest(e, v.Parent, 1)
+                                end)
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+UserInputService.InputBegan:Connect(onQuantumInputBegan)
+
+
+RunService.RenderStepped:Connect(function()
+    for _, legName in pairs({"Right Leg"}) do
+        local leg = player.Character and player.Character:FindFirstChild(legName)
+        if leg then
+            for _, v in pairs(leg:GetDescendants()) do
+                if v.Name == "TouchInterest" and v.Parent then
+                    local currentBalls = getCurrentBalls()
+                    for _, e in pairs(currentBalls) do
+                        if e and e.Parent and e.Position and leg.Position and (e.Position - leg.Position).magnitude < reach then
+                            pcall(function()
+                                firetouchinterest(e, v.Parent, 0)
+                                firetouchinterest(e, v.Parent, 1)
+                            end)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+
+while wait(0.1) do
+    getgenv().TPSBALL = pu()
+end
