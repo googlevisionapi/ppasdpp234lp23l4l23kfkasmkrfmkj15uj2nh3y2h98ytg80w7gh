@@ -1,66 +1,257 @@
+task.wait(3)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RemoteHandler = require(ReplicatedStorage.Modules.RemoteHandler)
+local remoteList = RemoteHandler.GetRemotes()
+local BallNetworking = RemoteHandler.BallNetworking()
+local kick = remoteList[6]
 
 
+local supported = true
+local success = pcall(function()
+	getrawmetatable(game)
+	setreadonly({}, false)
+	newcclosure(function() end)
+	local f = function() return "original" end
+	local h = hookfunction(f, function() return "hooked" end)
+	assert(f() == "hooked")
+end)
+if not success then
+	supported = false
+	
+else
+	supported = true
+end
+
+
+
+local inicio = tick()
+if hookmetamethod then
+
+    
+    local mt = getrawmetatable(game)
+    local oldNamecall = mt.__namecall
+    
+    setreadonly(mt, false)
+    
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+        
+
+        if method == "FireServer" and self == BallNetworking then
+            local action = args[1]
+            
+
+            local blockedActions = {
+                "Modify_Remotes",
+                "High_WalkSpeed", 
+                "Exploiting_Ball",
+                "Script_Executer",
+                "RemoteExploit",
+                "Shop_Exploit",
+                "No_Clip",
+                "Instances",
+                "Deleting",
+                "Auto_Hit",
+                "Auto_Catch_Suspect",
+                "Enlarged_Hitbox"
+            }
+            
+            for _, blockedAction in pairs(blockedActions) do
+                if action == blockedAction then
+                    return 
+                end
+            end
+            
+        end
+        
+        return oldNamecall(self, ...)
+    end)
+    
+    setreadonly(mt, true)
+end
+task.wait(1)
+pcall(function()
+    BallNetworking:FireServer("Modify_Remotes")
+end)
+
+kick:InvokeServer('TESTTARGET', 'TESTTARGET')
+kick:Destroy()
+
+setthreadcontext(5)
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 local v = require(game:GetService("StarterPlayer").StarterPlayerScripts["TSFL Client"].Modules.BallNetworking)
 local x = require(game:GetService("Players").LocalPlayer.PlayerScripts["TSFL Client"].Modules.BallNetworking)
+local Replication = require(game:GetService("StarterPlayer").StarterPlayerScripts["TSFL Client"].Modules.Replication)
+local Replication2 = require(game:GetService("Players").LocalPlayer.PlayerScripts["TSFL Client"].Modules.Replication)
+local Values = game:GetService("ReplicatedStorage").Values
+local TweenService = game:GetService("TweenService")
 
+hookfunction(Replication.GetHorizontalCurve, function(_, leg, ball, power, _, reverse)
+    local cf = leg.CFrame
+    local legSize = leg.Size.X
+    local ballRadius = ball.Size.X / 2
+    local localPos = cf:PointToObjectSpace(ball.Position)
+    local curveMultiplier = Values.CurveMultiplier.Value
+
+    local offsetX = localPos.X
+    local ratio = math.abs(offsetX) / ballRadius + legSize / 2
+    local easing = TweenService:GetValue(math.clamp(ratio, 0, 1), Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+    local result = easing * (offsetX < 0 and 1 or -1) * power
+
+    if reverse then result = -result end
+    return result * curveMultiplier
+end)
+hookfunction(Replication2.GetHorizontalCurve, function(_, leg, ball, power, _, reverse)
+    local cf = leg.CFrame
+    local legSize = leg.Size.X
+    local ballRadius = ball.Size.X / 2
+    local localPos = cf:PointToObjectSpace(ball.Position)
+    local curveMultiplier = Values.CurveMultiplier.Value
+
+    local offsetX = localPos.X
+    local ratio = math.abs(offsetX) / ballRadius + legSize / 2
+    local easing = TweenService:GetValue(math.clamp(ratio, 0, 1), Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+    local result = easing * (offsetX < 0 and 1 or -1) * power
+
+    if reverse then result = -result end
+    return result * curveMultiplier
+end)
 local oldfunction = x.IsDistanceTooBig
 local oldfunction1 = v.IsDistanceTooBig
 local function1 = x.VerifyHit
 local function2 = v.VerifyHit
 local another1 = x.IsBallBoundingHitbox
 local another2 = x.IsBallBoundingHitbox
-
 local function v1()
-    return false
+  return false
 end
 local function v2()
-    return true
+  return true
 end
-
 hookfunction(oldfunction, v1)
 hookfunction(oldfunction1, v1)
 hookfunction(function1, v1)
 hookfunction(function2, v1)
 hookfunction(another1, v2)
 hookfunction(another2, v2)
+setthreadcontext(8)
 
-
-
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-
+local function getexecutor()
+    local exec = identifyexecutor()
+    return tostring(exec)
+end
 local Window = Fluent:CreateWindow({
-    Title = "SPJ Reach",
-    SubTitle = "idk",
+    Title = "SPJ Reach (Futsal)",
+    SubTitle = "by alr_dev",
     TabWidth = 160,
-    Size = UDim2.fromOffset(400, 300),
+    Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
     Theme = "Dark",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
 local Tabs = {
-    Main = Window:AddTab({ Title = "Main", Icon = "box" })
+    Main = Window:AddTab({ Title = "Main", Icon = "box" }),
+    Customization = Window:AddTab({ Title = "Customization", Icon = "palette" }),
+    fun = Window:AddTab({ Title = "Fun", Icon = "star" }),
+    esp = Window:AddTab({ Title = "ESP", Icon = "eye" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" }),
+    Ball = Window:AddTab({ Title = "Ball", Icon = "circle" }),
+    AutoFarm = Window:AddTab({ Title = "AutoFarm", Icon = "dollar-sign" }),
+    Status = Window:AddTab({ Title = "Status", Icon = "signal" })
 }
 
-
+local Options = Fluent.Options
+Tabs.Status:AddParagraph({
+    Title = "Script Status",
+    Content = "Alive: 🟢"
+})
+Tabs.Status:AddParagraph({
+    Title = "Executor",
+    Content = getexecutor()
+})
+Tabs.Status:AddParagraph({
+    Title = "Script Version",
+    Content = "0.2.8"
+})
+local MarketplaceService = game:GetService("MarketplaceService")
+local LocalPlayer = game:GetService("Players").LocalPlayer
 local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
-
-
-local reach = 10
+local TweenService = game:GetService("TweenService")
 local player = Player
 
+local lastRefreshTime = os.time()
+local reach = 10
+local ballOwners = {}
+local reachCircle = nil
+local ballOwnerEnabled = false
+local ballColor = Color3.new(1, 0, 0)
+local reachColor = Color3.new(0, 0, 1)
+local ballNames = {}
+
+
+
+local autoRefreshEnabled = false
+
+
+local ballESP = Drawing.new("Circle")
+local tracerESP = Drawing.new("Line")
+local distanceLabel = Drawing.new("Text")
+
+ballESP.Size = 0.3
+ballESP.Color = Color3.fromRGB(255, 0, 0)
+ballESP.Thickness = 1
+ballESP.Transparency = 0.1
+ballESP.Filled = true
+
+tracerESP.Thickness = 2
+tracerESP.Color = Color3.fromRGB(0, 255, 0)
+tracerESP.Transparency = 0.5
+
+distanceLabel.Size = 20
+distanceLabel.Color = Color3.fromRGB(255, 255, 255)
+distanceLabel.Center = true
+distanceLabel.Outline = true
+
+local espEnabled = false
+local tracersEnabled = false
+local distanceEnabled = false
+
+local function activateFreePlag()
+    hookfunction(MarketplaceService.UserOwnsGamePassAsync, function(_, playerId, gamepassId)
+        if playerId == LocalPlayer.UserId then
+            return true
+        end
+        return false
+    end)
+    
+    game:GetService("Players").LocalPlayer.PlayerScripts["TSFL Client"].Scripts.PlagTopbarToggle.Enabled = false
+    game:GetService("Players").LocalPlayer.PlayerScripts["TSFL Client"].Scripts.PlagTopbarToggle.Enabled = true
+    
+    Fluent:Notify({
+        Title = "Free Plag",
+        Content = "Plag functionality activated!",
+        Duration = 5
+    })
+end
 
 local function isUUID(str)
     return string.match(str, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") ~= nil
 end
-
-
 local function pu()
     local ballsFolder = workspace.Balls
+    local function isUUID(str)
+        return string.match(str, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") ~= nil
+    end
     
     for _, part in pairs(ballsFolder:GetDescendants()) do
         if part:IsA("BasePart") and isUUID(part.Name) then
@@ -70,23 +261,215 @@ local function pu()
     
     return nil 
 end
-
-
-getgenv().TPSBALL = pu()
-
+getgenv().BALLTPS = pu()
 
 local function getCurrentBalls()
     local currentBalls = {}
     local ballsFolder = workspace:FindFirstChild("Balls")
     if ballsFolder then
         for _, descendant in pairs(ballsFolder:GetDescendants()) do
-            if descendant:IsA("BasePart") and isUUID(descendant.Name) then
+            if descendant:IsA("BasePart") and (isUUID(descendant.Name) or table.find(ballNames, descendant.Name)) then
                 table.insert(currentBalls, descendant)
             end
         end
     end
     return currentBalls
 end
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+
+
+Players.LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+	character = newCharacter
+end)
+
+
+
+
+local function enableAutoCatch()
+	autoCatchEnabled = true
+end
+
+local function disableAutoCatch()
+	autoCatchEnabled = false
+end
+
+local function setCatchDistance(distance)
+	catchDistance = distance
+end
+local function getBallInstance()
+    local ballsFolder = workspace:FindFirstChild("Balls")
+    if ballsFolder then
+        for _, descendant in pairs(ballsFolder:GetDescendants()) do
+            if descendant:IsA("BasePart") and (isUUID(descendant.Name) or table.find(ballNames, descendant.Name)) then
+                return descendant 
+            end
+        end
+    end
+    return nil 
+end
+
+local function moveCircleSmoothly(targetPosition)
+    if not reachCircle then return end
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+    local tweenGoal = {Position = targetPosition}
+    local tween = TweenService:Create(reachCircle, tweenInfo, tweenGoal)
+    tween:Play()
+end
+
+local reachTransparency = 0.8 
+
+local function createReachCircle()
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
+    if reachCircle then
+        reachCircle.Size = Vector3.new(reach * 2, reach * 2, reach * 2)
+        reachCircle.Color = reachColor
+        reachCircle.Transparency = reachTransparency 
+    else
+        reachCircle = Instance.new("Part")
+        reachCircle.Parent = Workspace
+        reachCircle.Shape = Enum.PartType.Ball
+        reachCircle.Size = Vector3.new(reach * 2, reach * 2, reach * 2)
+        reachCircle.Anchored = true
+        reachCircle.CanCollide = false
+        reachCircle.Transparency = reachTransparency 
+        reachCircle.Material = Enum.Material.ForceField
+        reachCircle.Color = reachColor
+        reachCircle.Position = player.Character.HumanoidRootPart.Position
+
+        RunService.RenderStepped:Connect(function()
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and reachCircle then
+                local targetPosition = player.Character.HumanoidRootPart.Position
+                moveCircleSmoothly(targetPosition)
+            end
+        end)
+    end
+end
+
+
+
+
+local function getClosestBall()
+    local closestBall = nil
+    local closestDistance = math.huge
+    for _, ball in pairs(workspace.Balls:GetChildren()) do
+        if ball:IsA("Part") then
+            local distance = (ball.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            if distance < closestDistance then
+                closestDistance = distance
+                closestBall = ball
+            end
+        end
+    end
+    return closestBall
+end
+
+
+do
+    Fluent:Notify({
+        Title = "SPJ Reach (Mps Futsal)",
+        Content = "The script has been loaded.",
+        Duration = 8
+    })
+
+local valuesFolder = game:GetService("ReplicatedStorage"):WaitForChild("Values")
+local debounceValue = valuesFolder:WaitForChild("OTDebounce")
+
+
+local originalDefault = debounceValue.Value
+
+
+local Input2 = Tabs.fun:AddInput("Input5", {
+    Title = "Changed cooldown of dribble",
+    Default = '0.25',
+    Placeholder = '0.25',
+    Numeric = true,
+    Finished = false,
+    Callback = function(value)
+        debounceValue.Value = value
+    end
+})
+Tabs.fun:AddButton({
+    Title = "Reset Cooldown",
+    Description = "Restore the default cooldown of dribble",
+    Callback = function()
+        Window:Dialog({
+            Title = "Reset Cooldown",
+            Content = "Are you sure you want to reset to the default cooldown?",
+            Buttons = {
+                {
+                    Title = "Confirm",
+                    Callback = function()
+                        debounceValue.Value = originalDefault
+                    end
+                },
+                {
+                    Title = "Cancel",
+                    Callback = function()
+                        print('ok')
+                    end
+                }
+            }
+        })
+    end
+})
+Tabs.Main:AddButton({
+    Title = "Free Plag",
+    Description = "gives u free plag",
+    Callback = function()
+            Window:Dialog({
+            Title = "Active free plag",
+            Content = "Are you sure you want to active free plag?",
+            Buttons = {
+                {
+                    Title = "Confirm",
+                    Callback = function()
+                        activateFreePlag()
+                    end
+                },
+                {
+                    Title = "Cancel",
+                    Callback = function()
+                        print('ok')
+                    end
+                }
+            }
+        })
+        
+    end
+})
+game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+
+    local Input = Tabs.fun:AddInput("Input", {
+        Title = "walkspeed",
+        Default = "a",
+        Placeholder = "16",
+        Numeric = false, 
+        Finished = false, 
+        Callback = function(Value)
+game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+
+        end
+    })
+    Tabs.Main:AddToggle("BallOwnerToggle", {
+        Title = "Enable Ball Owner",
+        Description = "Makes you get the ball first",
+        Default = false,
+        Callback = function(state)
+            ballOwnerEnabled = state
+            Fluent:Notify({
+                Title = "Ball Owner",
+                Content = ballOwnerEnabled and "Ball Owner Enabled" or "Ball Owner Disabled",
+                Duration = 3
+            })
+        end
+    })
 
 
 Tabs.Main:AddInput("ReachInput", {
@@ -98,43 +481,521 @@ Tabs.Main:AddInput("ReachInput", {
     Finished = true,
     Callback = function(value)
         reach = tonumber(value) or 10
-        print("Reach set to: " .. reach)
+        createReachCircle()
     end
 })
 
 
-local function onQuantumInputBegan(input, gameProcessedEvent)
-    local ignoredKeys = {
-        [Enum.KeyCode.W] = true,
-        [Enum.KeyCode.A] = true,
-        [Enum.KeyCode.S] = true,
-        [Enum.KeyCode.D] = true,
-        [Enum.KeyCode.Space] = true,
-        [Enum.KeyCode.Slash] = true,
-        [Enum.KeyCode.Semicolon] = true
-    }
+    Tabs.esp:AddToggle("EspToggle", {
+        Title = "Enable ESP",
+        Description = "Show ball ESP",
+        Default = false,
+        Callback = function(state)
+            espEnabled = state
+            ballESP.Visible = espEnabled
+            tracerESP.Visible = tracersEnabled and espEnabled
+            distanceLabel.Visible = distanceEnabled and espEnabled
+            Fluent:Notify({
+                Title = "ESP",
+                Content = espEnabled and "ESP Enabled" or "ESP Disabled",
+                Duration = 3
+            })
+        end
+    })
 
-    if input.UserInputType == Enum.UserInputType.Keyboard and
-       (input.KeyCode == Enum.KeyCode.Slash or input.KeyCode == Enum.KeyCode.Semicolon) then
-        return
+
+    Tabs.esp:AddToggle("TracersToggle", {
+        Title = "Enable Tracers",
+        Description = "Show tracer lines to the ball",
+        Default = false,
+        Callback = function(state)
+            tracersEnabled = state
+            tracerESP.Visible = tracersEnabled and espEnabled
+            Fluent:Notify({
+                Title = "Tracers",
+                Content = tracersEnabled and "Tracers Enabled" or "Tracers Disabled",
+                Duration = 3
+            })
+        end
+    })
+
+
+    Tabs.esp:AddToggle("DistanceToggle", {
+        Title = "Enable Distance Label",
+        Description = "Show distance and owner info",
+        Default = false,
+        Callback = function(state)
+            distanceEnabled = state
+            distanceLabel.Visible = distanceEnabled and espEnabled
+            Fluent:Notify({
+                Title = "Distance Label",
+                Content = distanceEnabled and "Distance Label Enabled" or "Distance Label Disabled",
+                Duration = 3
+            })
+        end
+    })
+
+
+Tabs.Customization:AddInput("ReachTransparencyInput", {
+    Title = "Reach Circle Transparency",
+    Description = "Change the transparency of the reach circle (0-1)",
+    Default = "0.8",
+    Placeholder = "0.8",
+    Numeric = true,
+    Finished = true,
+    Callback = function(value)
+        local transparency = tonumber(value) or 0.8
+        transparency = math.clamp(transparency, 0, 1)
+        
+        reachTransparency = transparency
+        if reachCircle then
+            reachCircle.Transparency = transparency
+        end
+        
+        Fluent:Notify({
+            Title = "Reach Circle Transparency",
+            Content = "Transparency set to " .. transparency,
+            Duration = 3
+        })
     end
+})
+    Tabs.Customization:AddColorpicker("ReachColorPicker", {
+        Title = "Reach Circle Color",
+        Description = "Change the reach circle color",
+        Default = Color3.fromRGB(0, 0, 255),
+        Callback = function(value)
+            reachColor = value
+            if reachCircle then
+                reachCircle.Color = reachColor
+            end
+            Fluent:Notify({
+                Title = "Reach Circle Color",
+                Content = "Color updated!",
+                Duration = 3
+            })
+        end
+    })
 
-    if ignoredKeys[input.KeyCode] then return end
 
-    if not gameProcessedEvent then
-        for _, legName in pairs({"Right Leg"}) do
-            local leg = player.Character and player.Character:FindFirstChild(legName)
-            if leg then
-                for _, v in pairs(leg:GetDescendants()) do
-                    if v.Name == "TouchInterest" and v.Parent then
-                        local currentBalls = getCurrentBalls()
-                        for _, e in pairs(currentBalls) do
-                            if e and e.Parent and e.Position and leg.Position and (e.Position - leg.Position).magnitude < reach then
-                                pcall(function()
-                                    firetouchinterest(e, v.Parent, 0)
-                                    firetouchinterest(e, v.Parent, 1)
-                                end)
-                                break
+    Tabs.Ball:AddColorpicker("BallColorPicker", {
+        Title = "Ball Color",
+        Description = "Change the ball highlight color",
+        Default = Color3.fromRGB(255, 0, 0),
+        Callback = function(value)
+            ballColor = value
+            getgenv().BALLTPS.Color = ballColor
+            Fluent:Notify({
+                Title = "Ball Color",
+                Content = "Color updated!",
+                Duration = 3
+            })
+        end
+    })
+
+
+end
+
+
+Tabs.Ball:AddInput("ModifyCurve", {
+    Title = "Modify Curve",
+    Description = "Change the curve of the ball",
+    Default = "1",
+    Placeholder = "1",
+    Numeric = true,
+    Finished = true,
+    Callback = function(value)
+        game:GetService("ReplicatedStorage").Values.CurveMultiplier.Value = tonumber(value)
+    end
+})
+
+Tabs.Ball:AddInput("ModifyBackSpin", {
+    Title = "Modify Back Spin",
+    Description = "Change the back spin of the ball",
+    Default = "0",
+    Placeholder = "0",
+    Numeric = true,
+    Finished = true,
+    Callback = function(value)
+        game:GetService("ReplicatedStorage").Values.BackSpin.Value = tonumber(value)
+    end
+})
+
+Tabs.Ball:AddInput("ModifyTopSpin", {
+    Title = "Modify Back Spin",
+    Description = "Change the back spin of the ball",
+    Default = "0",
+    Placeholder = "0",
+    Numeric = true,
+    Finished = true,
+    Callback = function(value)
+        game:GetService("ReplicatedStorage").Values.TopSpinValue = tonumber(value)
+    end
+})
+
+local autoFarmEnabled = false
+local autoKeyEnabled = false
+
+local function getGoalZone()
+    local Teams = game:GetService("Teams")
+    local paths = {
+        Away = workspace.BallZones.AwayGoalZone,
+        Home = workspace.BallZones.HomeGoalZone
+    }
+    if player.Team == Teams["Away FC"] then
+        return paths.Home
+    elseif player.Team == Teams["Home FC"] then
+        return paths.Away
+    end
+end
+
+local function teleportToBall()
+    local ball = getgenv().BALLTPS
+    if ball and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = ball.CFrame * CFrame.new(0, 2, 0)
+    end
+end
+
+local function shootBall()
+    local shootTool = player.Backpack:FindFirstChild("Dribble")
+    if shootTool then
+        player.Character.Humanoid:EquipTool(shootTool)
+    end
+end
+
+local function teleportBallToGoal()
+    local ball = getgenv().BALLTPS
+    local goalZone = getGoalZone()
+    if ball and goalZone then
+        ball.CFrame = goalZone.CFrame * CFrame.new(0, 5, 0)
+    end
+end
+
+task.spawn(function()
+    while true do
+        if autoFarmEnabled then
+            local ball = getgenv().BALLTPS
+            if ball and ball.Parent then
+                local networkOwner = ball:FindFirstChild("NetworkOwner")
+                if networkOwner and tostring(networkOwner.Value) == player.Name then
+                    teleportBallToGoal()
+                else
+                    teleportToBall()
+                    shootBall()
+                end
+            end
+        end
+        wait(0.1)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if autoKeyEnabled then
+            local VirtualInputManager = game:GetService("VirtualInputManager")
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
+            wait(0.05)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
+        end
+        wait()
+    end
+end)
+
+Tabs.AutoFarm:AddToggle("AutoFarmToggle", {
+    Title = "Enable AutoFarm",
+    Default = false,
+    Callback = function(Value)
+        autoFarmEnabled = Value
+    end
+})
+
+Tabs.AutoFarm:AddToggle("AutoKeyToggle", {
+    Title = "Enable AutoKey",
+    Default = false,
+    Callback = function(Value)
+        autoKeyEnabled = Value
+    end
+})
+
+
+local camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+_G.TPSBallSpeed = 200
+
+
+local controlling = false
+local currentBall = nil
+
+
+
+
+local function startControlling(ball)
+	currentBall = ball
+	camera.CameraSubject = ball
+	camera.CameraType = Enum.CameraType.Custom
+	controlling = true
+end
+
+local function stopControlling()
+	camera.CameraSubject = player.Character:FindFirstChild("Humanoid") or player.Character:FindFirstChildWhichIsA("BasePart")
+	camera.CameraType = Enum.CameraType.Custom
+	currentBall = nil
+	controlling = false
+end
+
+
+
+RunService.RenderStepped:Connect(function()
+	if not controlling or not currentBall then return end
+
+	local camCF = camera.CFrame
+	local moveDir = camCF.LookVector -- Always move forward in camera direction
+
+	if moveDir.Magnitude > 0 then
+		moveDir = moveDir.Unit * math.clamp(_G.TPSBallSpeed or 0, 0, _G.TPSBallSpeed)
+		currentBall.Velocity = moveDir
+	else
+		currentBall.Velocity *= 0.9
+	end
+end)
+-- === UI Integration ===
+Tabs.Ball:AddToggle("ControlBallToggle", {
+	Title = "Enable Ball Control",
+	Description = "Toggle free-fly control of the TPS ball",
+	Default = false,
+	Callback = function(state)
+		if state then
+			local ball = getgenv().BALLTPS
+			if ball then
+				startControlling(ball)
+			else
+				warn("No TPS ball found!")
+			end
+		else
+			stopControlling()
+		end
+	end
+})
+local ballHandleEnabled = false
+local ballHandle = nil
+
+local function createBallHandle(ball)
+	if ballHandle then
+		ballHandle:Destroy()
+	end
+	
+	local handle = Instance.new("SelectionBox")
+	handle.Parent = ball
+	handle.Adornee = ball
+	handle.Color3 = Color3.fromRGB(255, 255, 255)
+	handle.LineThickness = 0.1
+	handle.Transparency = 0.5
+	ballHandle = handle
+end
+
+local function removeBallHandle()
+	if ballHandle then
+		ballHandle:Destroy()
+		ballHandle = nil
+	end
+end
+
+Tabs.Ball:AddToggle("BallHandle", { 
+	Title = "Ball Handle", 
+	Description = "Show selection box around ball", 
+	Default = false, 
+	Callback = function(state)  
+		ballHandleEnabled = state
+		local ball = getgenv().BALLTPS
+		if ball and ballHandleEnabled then
+			createBallHandle(ball)
+		else
+			removeBallHandle()
+		end
+	end 
+})
+
+Tabs.Ball:AddInput("BallSize", { 
+	Title = "Ball Size", 
+	Description = "Change the size of the ball", 
+	Default = "2.5", 
+	Placeholder = "2.5", 
+	Numeric = true, 
+	Finished = true, 
+	Callback = function(value) 
+		local ball = getgenv().BALLTPS
+		if ball then
+			local size = tonumber(value) or 1
+			ball.Size = Vector3.new(size, size, size)
+			
+			if ballHandleEnabled then
+				createBallHandle(ball)
+			end
+		end
+	end 
+})
+
+Tabs.Ball:AddInput("BallTransparency", { 
+	Title = "Ball Transparency", 
+	Description = "Change the transparency of the ball (0-1)", 
+	Default = "0", 
+	Placeholder = "0", 
+	Numeric = true, 
+	Finished = true, 
+	Callback = function(value) 
+		local ball = getgenv().BALLTPS
+		if ball then
+			local transparency = tonumber(value) or 0
+			transparency = math.clamp(transparency, 0, 1)
+			ball.Transparency = transparency
+		end
+	end 
+})
+
+Tabs.Ball:AddInput("BallSpeedInput", {
+	Title = "Control Speed",
+	Description = "Set your ball fly speed (0-1000)",
+	Default = tostring(_G.TPSBallSpeed),
+	Placeholder = "0 - 1000",
+	Numeric = true,
+	Finished = true,
+	Callback = function(value)
+		local num = tonumber(value)
+		if num and num >= 0 and num <= 1000 then
+			_G.TPSBallSpeed = num
+		end
+	end
+})
+
+
+local Keybind = Tabs.Ball:AddKeybind("BallControlKeybind", {
+    Title = "Toggle Ball Control (Keybind)",
+    Mode = "Toggle", 
+    Default = "U",
+
+    Callback = function(state)
+
+        if state then
+            local ball = getgenv().BALLTPS
+            if ball then
+                startControlling(ball)
+            else
+                warn("No TPS ball found!")
+            end
+        else
+            stopControlling()
+        end
+
+        Options.ControlBallToggle:SetValue(state)
+    end,
+
+    ChangedCallback = function(newKey)
+        
+    end
+})
+
+
+task.spawn(function()
+    while true do
+        if autoRefreshEnabled then
+            balls = pu()
+        end
+        wait(5)
+        if Fluent.Unloaded then break end
+    end
+end)
+
+
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("spjreach")
+SaveManager:SetFolder("spjreach/mpsfutsal")
+InterfaceManager:BuildInterfaceSection(Tabs.Customization)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+Window:SelectTab(1)
+
+Fluent:Notify({
+    Title = "Fluent",
+    Content = "The script has been loaded.",
+    Duration = 8
+})
+
+SaveManager:LoadAutoloadConfig()
+local index = 1
+
+
+
+
+
+local currentMode = "LEGS MODE"
+local modeConnections = {}
+
+
+local ModeDropdown = Tabs.Main:AddDropdown("ModeDropdown", {
+    Title = "Touch Mode",
+    Description = "Select which body parts to use for ball interaction",
+    Values = {"LEGS MODE", "ARMS MODE"},
+    Multi = false,
+    Default = 1,
+})
+
+
+local function disconnectModeConnections()
+    for _, connection in pairs(modeConnections) do
+        if connection then
+            connection:Disconnect()
+        end
+    end
+    modeConnections = {}
+end
+
+
+local function setupLegsMode()
+    disconnectModeConnections()
+    
+    local function onQuantumInputBeganLegs(input, gameProcessedEvent)
+        local ignoredKeys = {
+            [Enum.KeyCode.W] = true,
+            [Enum.KeyCode.A] = true,
+            [Enum.KeyCode.S] = true,
+            [Enum.KeyCode.D] = true,
+            [Enum.KeyCode.Space] = true,
+            [Enum.KeyCode.Slash] = true,
+            [Enum.KeyCode.Semicolon] = true
+        }
+
+        if input.UserInputType == Enum.UserInputType.Keyboard and
+           (input.KeyCode == Enum.KeyCode.Slash or input.KeyCode == Enum.KeyCode.Semicolon) then
+            return
+        end
+
+        if ignoredKeys[input.KeyCode] then return end
+
+        if not gameProcessedEvent then
+            for _, legName in pairs({"Right Leg", "Left Leg"}) do
+                local leg = player.Character and player.Character:FindFirstChild(legName)
+                if leg then
+                    for _, v in pairs(leg:GetDescendants()) do
+                        if v.Name == "TouchInterest" and v.Parent then
+                            local currentBalls = getCurrentBalls()
+                            for _, e in pairs(currentBalls) do
+                                if e and e.Parent and e.Position and leg.Position and (e.Position - leg.Position).magnitude < reach then
+                                    if ballOwnerEnabled or (not ballOwners[e] or ballOwners[e] == player) then
+                                        if not ballOwners[e] then
+                                            ballOwners[e] = player
+                                        end
+                                        pcall(function()
+                                            firetouchinterest(e, v.Parent, 0)
+                                            firetouchinterest(e, v.Parent, 1)
+                                        end)
+                                        break
+                                    end
+                                end
                             end
                         end
                     end
@@ -142,33 +1003,219 @@ local function onQuantumInputBegan(input, gameProcessedEvent)
             end
         end
     end
-end
-
-UserInputService.InputBegan:Connect(onQuantumInputBegan)
 
 
-RunService.RenderStepped:Connect(function()
-    for _, legName in pairs({"Right Leg"}) do
-        local leg = player.Character and player.Character:FindFirstChild(legName)
-        if leg then
-            for _, v in pairs(leg:GetDescendants()) do
-                if v.Name == "TouchInterest" and v.Parent then
-                    local currentBalls = getCurrentBalls()
-                    for _, e in pairs(currentBalls) do
-                        if e and e.Parent and e.Position and leg.Position and (e.Position - leg.Position).magnitude < reach then
-                            pcall(function()
-                                firetouchinterest(e, v.Parent, 0)
-                                firetouchinterest(e, v.Parent, 1)
-                            end)
+    local function onRenderSteppedLegs()
+        for _, legName in pairs({"Right Leg", "Left Leg"}) do
+            local leg = player.Character and player.Character:FindFirstChild(legName)
+            if leg then
+                for _, v in pairs(leg:GetDescendants()) do
+                    if v.Name == "TouchInterest" and v.Parent then
+                        local currentBalls = getCurrentBalls()
+                        for _, e in pairs(currentBalls) do
+                            if e and e.Parent and e.Position and leg.Position and (e.Position - leg.Position).magnitude < reach then
+                                if not ballOwners[e] then
+                                    ballOwners[e] = player
+                                    pcall(function()
+                                        firetouchinterest(e, v.Parent, 0)
+                                        firetouchinterest(e, v.Parent, 1)
+                                    end)
+                                elseif ballOwners[e] == player then
+                                    pcall(function()
+                                        firetouchinterest(e, v.Parent, 0)
+                                        firetouchinterest(e, v.Parent, 1)
+                                    end)
+                                end
+                            end
                         end
                     end
                 end
             end
         end
     end
+    
+
+    modeConnections[#modeConnections + 1] = UserInputService.InputBegan:Connect(onQuantumInputBeganLegs)
+    modeConnections[#modeConnections + 1] = RunService.RenderStepped:Connect(onRenderSteppedLegs)
+    
+    Fluent:Notify({
+        Title = "Mode Changed",
+        Content = "LEGS MODE activated",
+        Duration = 3
+    })
+end
+
+
+local function setupArmsMode()
+    disconnectModeConnections()
+    
+
+    local function onQuantumInputBeganArms(input, gameProcessedEvent)
+        local ignoredKeys = {
+            [Enum.KeyCode.W] = true,
+            [Enum.KeyCode.A] = true,
+            [Enum.KeyCode.S] = true,
+            [Enum.KeyCode.D] = true,
+            [Enum.KeyCode.Space] = true,
+            [Enum.KeyCode.Slash] = true,
+            [Enum.KeyCode.Semicolon] = true
+        }
+
+        if input.UserInputType == Enum.UserInputType.Keyboard and
+           (input.KeyCode == Enum.KeyCode.Slash or input.KeyCode == Enum.KeyCode.Semicolon) then
+            return
+        end
+
+        if ignoredKeys[input.KeyCode] then return end
+
+        if not gameProcessedEvent then
+            for _, armName in pairs({"Right Arm", "Left Arm"}) do
+                local arm = player.Character and player.Character:FindFirstChild(armName)
+                if arm then
+                    for _, v in pairs(arm:GetDescendants()) do
+                        if v.Name == "TouchInterest" and v.Parent then
+                            local currentBalls = getCurrentBalls()
+                            for _, e in pairs(currentBalls) do
+                                if e and e.Parent and e.Position and arm.Position and (e.Position - arm.Position).magnitude < reach then
+                                    if ballOwnerEnabled or (not ballOwners[e] or ballOwners[e] == player) then
+                                        if not ballOwners[e] then
+                                            ballOwners[e] = player
+                                        end
+                                        pcall(function()
+                                            firetouchinterest(e, v.Parent, 0)
+                                            firetouchinterest(e, v.Parent, 1)
+                                        end)
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+
+    local function onRenderSteppedArms()
+        for _, armName in pairs({"Right Arm", "Left Arm"}) do
+            local arm = player.Character and player.Character:FindFirstChild(armName)
+            if arm then
+                for _, v in pairs(arm:GetDescendants()) do
+                    if v.Name == "TouchInterest" and v.Parent then
+                        local currentBalls = getCurrentBalls()
+                        for _, e in pairs(currentBalls) do
+                            if e and e.Parent and e.Position and arm.Position and (e.Position - arm.Position).magnitude < reach then
+                                if not ballOwners[e] then
+                                    ballOwners[e] = player
+                                    pcall(function()
+                                        firetouchinterest(e, v.Parent, 0)
+                                        firetouchinterest(e, v.Parent, 1)
+                                    end)
+                                elseif ballOwners[e] == player then
+                                    pcall(function()
+                                        firetouchinterest(e, v.Parent, 0)
+                                        firetouchinterest(e, v.Parent, 1)
+                                    end)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+
+    modeConnections[#modeConnections + 1] = UserInputService.InputBegan:Connect(onQuantumInputBeganArms)
+    modeConnections[#modeConnections + 1] = RunService.RenderStepped:Connect(onRenderSteppedArms)
+    
+    Fluent:Notify({
+        Title = "Mode Changed",
+        Content = "ARMS MODE activated",
+        Duration = 3
+    })
+end
+
+
+ModeDropdown:OnChanged(function(Value)
+    currentMode = Value
+    
+    if currentMode == "LEGS MODE" then
+        setupLegsMode()
+    elseif currentMode == "ARMS MODE" then
+        setupArmsMode()
+    end
 end)
 
 
+setupLegsMode()
+
+RunService.RenderStepped:Connect(function()
+    if not espEnabled then return end
+    local closestBall = pu()
+    if closestBall then
+        local ballPosition, onScreen = workspace.CurrentCamera:WorldToViewportPoint(closestBall.Position)
+        if onScreen then
+            ballESP.Position = Vector2.new(ballPosition.X, ballPosition.Y)
+            ballESP.Visible = espEnabled
+            tracerESP.From = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y)
+            tracerESP.To = Vector2.new(ballPosition.X, ballPosition.Y)
+            tracerESP.Visible = tracersEnabled
+            local distance = (closestBall.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            local owner = closestBall:FindFirstChild("Owner")
+            local ownerName = owner and owner.Value or "Unknown"
+            if type(ownerName) ~= "string" then
+                ownerName = tostring(ownerName)
+            end
+            distanceLabel.Position = Vector2.new(ballPosition.X, ballPosition.Y + 20)
+            distanceLabel.Text = string.format("Owner: %s\nDistance: %.2f m", ownerName, distance)
+            distanceLabel.Visible = distanceEnabled
+        else
+            ballESP.Visible = false
+            tracerESP.Visible = false
+            distanceLabel.Visible = false
+        end
+    else
+        ballESP.Visible = false
+        tracerESP.Visible = false
+        distanceLabel.Visible = false
+    end
+end)
+
+
+function cleanup()
+
+    ballESP:Remove()
+    tracerESP:Remove()
+    distanceLabel:Remove()
+    Fluent:Notify({
+        Title = "Error",
+        Content = "The script was closed, please report this error to the developer. Code error: 161218 (PLAYER UNLOADED)",
+        Duration = 5
+    })
+    if reachCircle then
+        reachCircle:Destroy()
+    end
+end
+
+
+Players.LocalPlayer.AncestryChanged:Connect(function(_, parent)
+    if not parent then
+        cleanup()
+    end
+end)
+
+
+player.CharacterAdded:Connect(function(character)
+    wait(1)
+    createReachCircle()
+end)
+
+if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+    createReachCircle()
+end
 while wait(0.1) do
-    getgenv().TPSBALL = pu()
+
+getgenv().BALLTPS = pu()
 end
